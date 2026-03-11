@@ -1,0 +1,22 @@
+{
+  "source_folder": "C:/Users/YourUser/Downloads",
+  "destination_folder": "C:/Users/YourUser/Desktop/OrganizedDownloads",
+
+  "email": {
+    "sender": "your_email@gmail.com",
+    "receiver": "receiver@gmail.com",
+    "password": "your_app_password",
+    "smtp_server": "smtp.gmail.com",
+    "smtp_port": 587
+  },
+
+  "schedule_time": "06:11",
+
+  "file_types": {
+    "Images": [".jpg", ".png", ".jpeg", ".gif"],
+    "Videos": [".mp4", ".mov", ".avi"],
+    "PDFs": [".pdf"],
+    "ZIPs": [".zip", ".rar"],
+    "Programs": [".exe", ".msi"]
+  }
+}
