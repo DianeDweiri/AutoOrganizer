@@ -1,25 +1,21 @@
-import shutil
-import time
-import schedule
-import logging
-import datetime
-import smtplib
-import json
+import shutil,time,schedule,logging,datetime,smtplib,json
 from pathlib import Path
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
-# ---------------- CONFIG ----------------
+
 CONFIG_FILE = Path("config.json")
 
 with open(CONFIG_FILE, "r") as f:
     config = json.load(f)
 
-SRC_FOLDER = Path(config["source_folder"])
+SRC_FOLDER = Path.home() / config["source_folder"]
 DEST_FOLDER = Path(config["destination_folder"])
 FILE_TYPES = config["file_types"]
 EMAIL = config["email"]
-SCHEDULE_TIME = config["schedule_time"]
+
 
 DEST_FOLDER.mkdir(parents=True, exist_ok=True)
 LOG_FOLDER = Path("logs")
@@ -28,7 +24,7 @@ LOG_FOLDER.mkdir(exist_ok=True)
 today = datetime.datetime.now().strftime("%Y-%m-%d")
 log_file = LOG_FOLDER / f"Files_Organized_{today}.log"
 
-# ---------------- LOGGING ----------------
+
 logging.basicConfig(
     filename=log_file,
     level=logging.INFO,
@@ -36,7 +32,35 @@ logging.basicConfig(
 )
 logging.info("Organizer Started")
 
-# ---------------- EMAIL FUNCTION ----------------
+
+def handle_single_file(file_path):
+    file = Path(file_path)
+
+    if not file.exists() or not file.is_file():
+        return
+
+    for folder, extensions in FILE_TYPES.items():
+        if file.suffix.lower() in extensions:
+
+            dest_folder = DEST_FOLDER / folder
+            dest_folder.mkdir(exist_ok=True)
+
+            dest_file = dest_folder / file.name
+
+            counter = 1
+            while dest_file.exists():
+                dest_file = dest_folder / f"{file.stem}_{counter}{file.suffix}"
+                counter += 1
+
+            try:
+                shutil.move(str(file), str(dest_file))
+                logging.info(f"{file.name} moved to {folder}")
+            except Exception as e:
+                logging.error(f"{file.name} failed: {e}")
+
+            break
+
+
 def send_email(report):
     message = MIMEMultipart()
     message["From"] = EMAIL["sender"]
@@ -54,7 +78,6 @@ def send_email(report):
     except Exception as e:
         logging.error(f"Email sending failed: {e}")
 
-# ---------------- ORGANIZER FUNCTION ----------------
 def organize_files():
     logging.info("Organizer job started")
     moved_files = 0
@@ -84,6 +107,7 @@ def organize_files():
                     skipped_files += 1
                     logging.error(f"{file.name} failed: {e}")
 
+
     report = f"""
 Organizer finished
 
@@ -94,15 +118,25 @@ Files skipped: {skipped_files}
 """
     send_email(report)
 
-# ---------------- SCHEDULER ----------------
-schedule.every().day.at(SCHEDULE_TIME).do(organize_files)
 
-def run_scheduler():
-    logging.info("Scheduler started")
-    while True:
-        schedule.run_pending()
-        time.sleep(30)
+class WatchHandler(FileSystemEventHandler):
+    def on_created(self, event):
+        if not event.is_directory:
+            time.sleep(1)
+            handle_single_file(event.src_path)
+
+
 
 if __name__ == "__main__":
-    organize_files()
-    run_scheduler()
+    observer = Observer()
+    event_handler = WatchHandler()
+
+    observer.schedule(event_handler, path=str(SRC_FOLDER), recursive=False)
+
+    observer.start()
+    try:
+        while True:
+            time.sleep(3)
+    except KeyboardInterrupt:
+        observer.stop()
+    observer.join()
