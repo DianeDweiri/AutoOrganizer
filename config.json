@@ -10,8 +10,6 @@
     "smtp_port": 587
   },
 
-  "schedule_time": "06:11",
-
   "file_types": {
     "Images": [".jpg", ".png", ".jpeg", ".gif"],
     "Videos": [".mp4", ".mov", ".avi"],
