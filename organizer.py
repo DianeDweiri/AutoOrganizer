@@ -125,7 +125,7 @@ class WatchHandler(FileSystemEventHandler):
             time.sleep(1)
             handle_single_file(event.src_path)
 
-
+schedule.every(config["schedule_time"]).days.do(backup_and_notify)
 
 if __name__ == "__main__":
     observer = Observer()
@@ -136,6 +136,7 @@ if __name__ == "__main__":
     observer.start()
     try:
         while True:
+            schedule.run_pending()
             time.sleep(3)
     except KeyboardInterrupt:
         observer.stop()
