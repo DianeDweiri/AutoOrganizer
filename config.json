@@ -2,6 +2,8 @@
   "source_folder": "C:/Users/YourUser/Downloads",
   "destination_folder": "C:/Users/YourUser/Desktop/OrganizedDownloads",
 
+  "schedule_time": "06:10",
+
   "email": {
     "sender": "your_email@gmail.com",
     "receiver": "receiver@gmail.com",
